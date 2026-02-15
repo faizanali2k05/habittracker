@@ -8,10 +8,11 @@ import streamlit as st
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
-load_dotenv()
+# Load environment variables from .env file, overriding existing system variables
+load_dotenv(override=True)
 
 # Get database URL from environment variable or Streamlit secrets
-DATABASE_URL = os.getenv("DATABASE_URL")
+DATABASE_URL = os.environ.get("DATABASE_URL")
 
 if not DATABASE_URL:
     try:
