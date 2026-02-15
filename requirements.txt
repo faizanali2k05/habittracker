@@ -1,0 +1,10 @@
+streamlit
+pandas
+plotly
+sqlalchemy
+passlib[bcrypt]
+python-jose[cryptography]
+pydantic
+psycopg2-binary
+bcrypt==4.0.1
+python-dotenv
