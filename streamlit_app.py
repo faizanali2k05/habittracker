@@ -58,10 +58,22 @@ def login_user(email, password):
             "email": email, 
             "password": password
         })
-        # Determine role from public.users table
-        user_data = supabase.table("users").select("role, full_name").eq("id", res.user.id).single().execute()
-        return res.user, user_data.data
+        
+        if res.user:
+            # Safely get role/profile from public.users table
+            try:
+                # Select only existing columns to avoid errors if schema is out of sync
+                user_data = supabase.table("users").select("*").eq("id", res.user.id).single().execute()
+                profile = user_data.data
+            except Exception:
+                # If the profile record doesn't exist, provide a default profile
+                profile = {"role": "user"}
+            
+            return res.user, profile
+        return None, None
     except Exception as e:
+        # Printing to console for debugging
+        print(f"Auth error: {e}")
         return None, None
 
 def register_user(email, password, full_name):
@@ -78,24 +90,32 @@ def register_user(email, password, full_name):
         })
         
         if res.user:
-            # Create user in public.users table
-            # Note regarding RLS: Make sure "users" table has an INSERT policy for auth.uid() = id
-            user_payload = {
-                "id": res.user.id,
-                "email": email,
-                "role": "user"
-                # "full_name" could be added if schema supports it, current schema doesn't have it in users table explicitly in user prompt but does in models.
-                # User prompt schema: id, email, role.
-            }
-            supabase.table("users").insert(user_payload).execute()
+            # Attempt to create user profile in public.users
+            try:
+                user_payload = {
+                    "id": res.user.id,
+                    "email": email,
+                    "role": "user"
+                }
+                # Check if full_name column exists (based on current schema it doesn't, but let's be safe)
+                # For now, we omit it since we know it causes errors.
+                supabase.table("users").insert(user_payload).execute()
+            except Exception as profile_err:
+                print(f"Profile creation error: {profile_err}")
+                # We don't return False here because the auth account WAS created.
+                # The user can still log in and we handle missing profiles in login_user.
             
-            # Create default categories is desirable?
-            # User instructions didn't specify, but existing code did.
-            # Let's keep it simple as per instructions.
             return True
         return False
     except Exception as e:
-        st.error(f"Registration Error: {e}")
+        err_msg = str(e).lower()
+        if "rate limit" in err_msg:
+            st.error("Too many attempts! Please wait a moment.")
+            st.warning("💡 TIP: Go to Supabase > Authentication > Providers > Email and **disable 'Confirm email'** to avoid this issue.")
+        elif "already registered" in err_msg or "user already exists" in err_msg:
+            st.error("User already exists. Please sign in.")
+        else:
+            st.error(f"Registration Error: {e}")
         return False
 
 # --- SESSION STATES ---
@@ -123,11 +143,16 @@ def login_page():
                 if submitted:
                     user_auth, user_profile = login_user(email, password)
                     if user_auth and user_profile:
+                        # Extract name from metadata or profile
+                        display_name = (user_auth.user_metadata.get("full_name") or 
+                                       (user_profile.get("full_name") if user_profile else None) or 
+                                       email.split("@")[0])
+                        
                         st.session_state.user = {
                             "id": user_auth.id, 
                             "email": user_auth.email, 
-                            "name": user_profile.get("full_name") or email.split("@")[0], 
-                            "role": user_profile.get("role", "user")
+                            "name": display_name, 
+                            "role": user_profile.get("role", "user") if user_profile else "user"
                         }
                         st.success("Login successful")
                         st.rerun()
