@@ -27,24 +27,270 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# --- CUSTOM CSS FOR PROFESSIONAL AESTHETICS ---
-st.markdown("""
+# --- THEME CONFIGURATION ---
+# Only allow dark and light themes
+if "theme" not in st.session_state:
+    st.session_state.theme = "light"
+
+# --- NOTIFICATION PERMISSION REQUEST ---
+# Add notification permission request at the top
+if "notification_permission_requested" not in st.session_state:
+    st.session_state.notification_permission_requested = False
+
+# Request notification permission with a prominent button
+if not st.session_state.notification_permission_requested:
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.info("🔔 **Enable Notifications** for habit reminders and completion alerts!")
+        if st.button("Allow Notifications", type="primary", key="notification_perm"):
+            st.session_state.notification_permission_requested = True
+            st.markdown("""
+            <script>
+            if ('Notification' in window) {
+                Notification.requestPermission().then(function(permission) {
+                    console.log('Notification permission:', permission);
+                });
+            }
+            </script>
+            """, unsafe_allow_html=True)
+            st.success("Notification permission requested! Refresh the page if needed.")
+            st.rerun()
+
+# --- CUSTOM CSS FOR RESPONSIVE DESIGN AND THEMES ---
+primary_bg = '#0f172a' if st.session_state.theme == 'dark' else '#ffffff'
+secondary_bg = '#1e293b' if st.session_state.theme == 'dark' else '#f8fafc'
+text_color = '#f8fafc' if st.session_state.theme == 'dark' else '#1e293b'
+border_color = '#334155' if st.session_state.theme == 'dark' else '#e2e8f0'
+
+theme_css = f"""
 <style>
     /* Global Styles */
-    @import url('https://fonts.googleapis.com/css2?family=Internal:wght@300;400;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
     
-    html, body, [class*="css"] {
+    html, body, [class*="css"] {{
         font-family: 'Inter', sans-serif;
-    }
+    }}
+
+    /* Apply theme to Streamlit components */
+    .stApp {{
+        background-color: {primary_bg} !important;
+        color: {text_color} !important;
+    }}
+    
+    .stSidebar {{
+        background-color: {secondary_bg} !important;
+        border-right: 1px solid {border_color} !important;
+    }}
+    
+    .stTextInput input, .stTextArea textarea, .stSelectbox select {{
+        background-color: {secondary_bg} !important;
+        color: {text_color} !important;
+        border: 1px solid {border_color} !important;
+        border-radius: 4px !important;
+    }}
+    
+    .stTextInput label, .stTextArea label, .stSelectbox label {{
+        color: {text_color} !important;
+    }}
+    
+    .stButton button {{
+        background-color: {secondary_bg} !important;
+        color: {text_color} !important;
+        border: 1px solid {border_color} !important;
+        border-radius: 4px !important;
+    }}
+    
+    .stButton button:hover {{
+        background-color: {border_color} !important;
+    }}
+    
+    .stMarkdown, .stText, p {{
+        color: {text_color} !important;
+    }}
+    
+    .stDataFrame, .stTable {{
+        background-color: {secondary_bg} !important;
+        border: 1px solid {border_color} !important;
+    }}
+    
+    .stDataFrame th, .stTable th {{
+        background-color: {border_color} !important;
+        color: {text_color} !important;
+    }}
+    
+    .stDataFrame td, .stTable td {{
+        color: {text_color} !important;
+        border-bottom: 1px solid {border_color} !important;
+    }}
+    
+    .stMetric {{
+        background-color: {secondary_bg} !important;
+        border: 1px solid {border_color} !important;
+        border-radius: 8px !important;
+    }}
+    
+    .stMetric label {{
+        color: {text_color} !important;
+    }}
+    
+    .stMetric .metric-value {{
+        color: {text_color} !important;
+    }}
+    
+    .stExpander {{
+        background-color: {secondary_bg} !important;
+        border: 1px solid {border_color} !important;
+        border-radius: 4px !important;
+    }}
+    
+    .stExpander summary {{
+        color: {text_color} !important;
+    }}
+    
+    .stTabs [data-baseweb="tab-list"] {{
+        background-color: {secondary_bg} !important;
+    }}
+    
+    .stTabs [data-baseweb="tab"] {{
+        color: {text_color} !important;
+    }}
+    
+    .stTabs [data-baseweb="tab"][aria-selected="true"] {{
+        background-color: {border_color} !important;
+    }}
+
+    /* Responsive Design for Mobile */
+    @media (max-width: 768px) {{
+        .stApp {{
+            padding: 1rem !important;
+        }}
+        
+        .stSidebar {{
+            width: 100% !important;
+            position: relative !important;
+        }}
+        
+        .stColumns {{
+            flex-direction: column !important;
+        }}
+        
+        .stMetric {{
+            margin-bottom: 1rem !important;
+        }}
+        
+        /* Make buttons larger on mobile */
+        .stButton button {{
+            width: 100% !important;
+            margin-bottom: 0.5rem !important;
+        }}
+        
+        /* Adjust form inputs */
+        .stTextInput input, .stTextArea textarea, .stSelectbox select {{
+            font-size: 16px !important; /* Prevent zoom on iOS */
+        }}
+        
+        /* Adjust charts for mobile */
+        .plotly-chart {{
+            height: 300px !important;
+        }}
+    }}
 
     /* Typography */
-    h1, h2, h3 {
+    h1, h2, h3 {{
         font-weight: 600;
         letter-spacing: -0.025em;
-    }
+        color: {text_color} !important;
+    }}
     
+    /* Notification styles */
+    .notification {{
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #22c55e;
+        color: white;
+        padding: 1rem;
+        border-radius: 8px;
+        z-index: 1000;
+        animation: slideIn 0.3s ease-out;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }}
+    
+    @keyframes slideIn {{
+        from {{ transform: translateX(100%); opacity: 0; }}
+        to {{ transform: translateX(0); opacity: 1; }}
+    }}
 </style>
-""", unsafe_allow_html=True)
+
+<script>
+    // Function to show browser notification
+    function showBrowserNotification(title, body) {{
+        if ('Notification' in window && Notification.permission === 'granted') {{
+            new Notification(title, {{
+                body: body,
+                icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMzIiIGN5PSIzMiIgcj0iMzIiIGZpbGw9IiMyMmM1NWUiLz4KPHBhdGggZD0iTTI0IDI0SDE2VjE2SDE2VjI0SDE2VjMySDE2VjQwSDE2VjQ4SDE2VjU2SDE2VjY0SDE2VjcySDE2VjgwSDE2VjkySDE2VjEwNFoiIGZpbGw9IndoaXRlIi8+Cjwvc3ZnPgo=',
+                badge: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMzIiIGN5PSIzMiIgcj0iMzIiIGZpbGw9IiMyMmM1NWUiLz4KPHBhdGggZD0iTTI0IDI0SDE2VjE2SDE2VjI0SDE2VjMySDE2VjQwSDE2VjQ4SDE2VjU2SDE2VjY0SDE2VjcySDE2VjgwSDE2VjkySDE2VjEwNFoiIGZpbGw9IndoaXRlIi8+Cjwvc3ZnPgo='
+            }});
+        }}
+    }}
+    
+    // Make function globally available
+    window.showBrowserNotification = showBrowserNotification;
+</script>
+"""
+
+st.markdown(theme_css, unsafe_allow_html=True)
+
+# --- NOTIFICATION FUNCTIONS ---
+def show_notification(title, message):
+    """Show a browser notification"""
+    notification_html = f"""
+    <div class="notification" id="notification_{hash(title + message)}">
+        <strong>{title}</strong><br>
+        {message}
+    </div>
+    <script>
+        setTimeout(() => {{
+            const notif = document.getElementById('notification_{hash(title + message)}');
+            if (notif) notif.remove();
+        }}, 4000);
+        
+        // Also show browser notification if supported
+        if (typeof showBrowserNotification !== 'undefined') {{
+            showBrowserNotification('{title}', '{message}');
+        }}
+    </script>
+    """
+    st.markdown(notification_html, unsafe_allow_html=True)
+
+def check_habit_reminders():
+    """Check for habit reminders that are due within 1 hour"""
+    user = st.session_state.user
+    if not user:
+        return
+    
+    supabase = get_client()
+    now = datetime.now()
+    one_hour_later = now + timedelta(hours=1)
+    
+    # Get habits with reminder times
+    habits = supabase.table("habits").select("*").eq("user_id", user['id']).execute().data
+    
+    for habit in habits:
+        if habit.get('reminder_time'):
+            reminder_time = datetime.strptime(habit['reminder_time'], '%H:%M:%S').time()
+            reminder_datetime = datetime.combine(date.today(), reminder_time)
+            
+            if now <= reminder_datetime <= one_hour_later:
+                # Check if already completed today
+                today_str = date.today().isoformat()
+                completed_today = supabase.table("habit_logs").select("*").eq("habit_id", habit['id']).eq("completed_date", today_str).execute().data
+                
+                if not completed_today:
+                    show_notification(
+                        "Habit Reminder", 
+                        f"Don't forget to complete your habit: {habit['name']}"
+                    )
 
 # --- SUPABASE HELPERS ---
 def get_client():
@@ -60,6 +306,12 @@ def login_user(email, password):
         })
         
         if res.user:
+            # Store the session token for authenticated API calls
+            if res.session:
+                st.session_state.session_token = res.session.access_token
+                # Set the auth token for subsequent API calls
+                supabase.auth.set_session(res.session.access_token, res.session.refresh_token)
+            
             # Safely get role/profile from public.users table
             try:
                 # Select only existing columns to avoid errors if schema is out of sync
@@ -90,6 +342,11 @@ def register_user(email, password, full_name):
         })
         
         if res.user:
+            # Store the session token for authenticated API calls
+            if res.session:
+                st.session_state.session_token = res.session.access_token
+                supabase.auth.set_session(res.session.access_token, res.session.refresh_token)
+            
             # Attempt to create user profile in public.users
             try:
                 user_payload = {
@@ -123,10 +380,20 @@ if "user" not in st.session_state:
     st.session_state.user = None
 if "auth_mode" not in st.session_state:
     st.session_state.auth_mode = "login" # login or register
+if "session_token" not in st.session_state:
+    st.session_state.session_token = None
 
 # --- PAGES ---
 
 def login_page():
+    # Theme toggle at the top
+    col1, col2 = st.columns([4, 1])
+    with col2:
+        theme_toggle = st.toggle("🌙 Dark", value=st.session_state.theme == "dark", key="theme_toggle_login")
+        if theme_toggle != (st.session_state.theme == "dark"):
+            st.session_state.theme = "dark" if theme_toggle else "light"
+            st.rerun()
+    
     # Center the login form responsibly
     col1, col2, col3 = st.columns([1, 2, 1])
     
@@ -262,7 +529,7 @@ def dashboard_page():
             
             fig = px.pie(values=values, names=labels, hole=0.6, color_discrete_sequence=['#ef4444', '#22c55e', '#3b82f6'])
             fig.update_layout(showlegend=True, margin=dict(l=20, r=20, t=20, b=20))
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, config={'responsive': True})
         else:
             st.info("No tasks created yet.")
 
@@ -282,7 +549,7 @@ def dashboard_page():
         
         fig2 = go.Figure(data=[go.Bar(x=dates_str, y=daily_completions, marker_color='#3b82f6')])
         fig2.update_layout(title="Habit Activity (Last 7 Days)", margin=dict(l=20, r=20, t=40, b=20))
-        st.plotly_chart(fig2, use_container_width=True)
+        st.plotly_chart(fig2, use_container_width=True, config={'responsive': True})
 
 
 def tasks_page():
@@ -318,6 +585,7 @@ def tasks_page():
                     "status": "pending"
                 }
                 supabase.table("tasks").insert(new_task).execute()
+                show_notification("Task Added!", f"New task '{t_title}' has been added to your list.")
                 st.success("Task added")
                 st.rerun()
 
@@ -341,6 +609,7 @@ def tasks_page():
                 if task['status'] != "completed":
                     if st.button("Complete", key=f"done_{task['id']}_{context}"):
                         supabase.table("tasks").update({"status": "completed"}).eq("id", task['id']).execute()
+                        show_notification("Task Completed!", f"Congratulations! You completed: {task['title']}")
                         st.rerun()
                 else:
                     st.write("Done")
@@ -387,6 +656,7 @@ def habits_page():
                     "user_id": user['id']
                 }
                 supabase.table("habits").insert(h).execute()
+                show_notification("Habit Added!", f"New habit '{h_name}' has been added to your tracking.")
                 st.success("Habit created")
                 st.rerun()
     
@@ -420,6 +690,7 @@ def habits_page():
                             "completed_date": today_str
                         }
                         supabase.table("habit_logs").insert(log).execute()
+                        show_notification("Habit Completed!", f"Great job! You completed: {h['name']}")
                         st.rerun()
             
             with c3:
@@ -463,45 +734,29 @@ def calendar_page():
             h_name = e.get('habits', {}).get('name', 'Unknown Habit')
             st.success(f"{h_name}")
 
-def admin_page():
-    st.title("Admin Administration")
-    user = st.session_state.user
-    supabase = get_client()
-    
-    # Role check
-    # We already have user['role'] from login
-    if user.get('role') != 'admin':
-        st.error("Access Denied.")
-        return
-
-    st.subheader("User Directory")
-    # Need admin policy to see all users
-    try:
-        users = supabase.table("users").select("*").execute().data
-        if users:
-            st.dataframe(users)
-            if st.checkbox("View JSON Data"):
-                st.json(users)
-        else:
-            st.info("No users found or permission denied.")
-    except Exception as e:
-        st.error(f"Error fetching data: {e}")
-    
-    # Backup (Not applicable for Supabase same way, maybe export CSV)
-    st.write("Database is managed by Supabase. Use Supabase Dashboard for backups.")
-
 # --- MAIN APP LOGIC ---
 def main():
     if not st.session_state.user:
         login_page()
     else:
+        # Check for habit reminders
+        check_habit_reminders()
+        
         # Sidebar Navigation
         with st.sidebar:
             st.title("Zenith")
             st.write(f"User: {st.session_state.user['name']}")
             
+            # Theme toggle
+            theme_toggle = st.toggle("🌙 Dark Mode", value=st.session_state.theme == "dark", key="theme_toggle_main")
+            if theme_toggle != (st.session_state.theme == "dark"):
+                st.session_state.theme = "dark" if theme_toggle else "light"
+                st.rerun()
+            
+            st.markdown("---")
+            
             # Simplified navigation
-            page = st.radio("Menu", ["Dashboard", "Tasks", "Habits", "Calendar", "Admin"])
+            page = st.radio("Menu", ["Dashboard", "Tasks", "Habits", "Calendar"])
             
             st.markdown("---")
             if st.button("Sign Out"):
@@ -516,8 +771,6 @@ def main():
             habits_page()
         elif page == "Calendar":
             calendar_page()
-        elif page == "Admin":
-            admin_page()
 
 if __name__ == "__main__":
     main()
